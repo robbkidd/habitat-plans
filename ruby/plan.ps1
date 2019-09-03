@@ -37,4 +37,6 @@ function Invoke-Build {
 
 function Invoke-Install {
     nmake install
+    gem update --system --no-document
+    gem install rb-readline --no-document
 }
