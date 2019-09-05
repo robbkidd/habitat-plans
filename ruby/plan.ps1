@@ -19,6 +19,12 @@ $pkg_include_dirs=@("include")
 $pkg_bin_dirs=@("bin")
 $pkg_interpreters=@("bin/ruby")
 
+$ruby_abi_version = [RegEx]::Replace($pkg_version, "\.\d+$", ".0")
+
+function Invoke-SetupEnvironment {
+    Push-RuntimeEnv -IsPath "GEM_PATH" "$pkg_prefix/lib/ruby/gems/$ruby_abi_version"
+}
+
 function Invoke-Unpack {
     # The Ruby source ZIP has a directory within it that matches Hab's expected $pkg_dirname
     # so override the default PowerShell Unpack that targets $pkg_dirname with this one so the
@@ -39,4 +45,11 @@ function Invoke-Install {
     nmake install
     gem update --system --no-document
     gem install rb-readline --no-document
+}
+
+function Invoke-After {
+    Write-BuildLine "** Clean-up unnecessary cached items"
+    Get-ChildItem $pkg_prefix/lib/ruby/gems/$ruby_abi_version/gems -Filter "spec" -Recurse | Remove-Item -Recurse -Force
+    Get-ChildItem $pkg_prefix/lib/ruby/gems/$ruby_abi_version/cache -Recurse | Remove-Item -Recurse -Force
+    Get-ChildItem $pkg_prefix -Filter "share" | Remove-Item -Recurse -Force   
 }
